@@ -19,7 +19,6 @@ class _SignupState extends State<Signup> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
   final _formKey = GlobalKey<FormState>();
 
   bool isLoading = false;
@@ -77,12 +76,14 @@ class _SignupState extends State<Signup> {
 
         // Navigate to Main Screen
 
-        Navigator.pushReplacement(
+     if(mounted){
+         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => const MainScreen(),
           ),
         );
+     }
 
       } on FirebaseAuthException catch (e) {
 
