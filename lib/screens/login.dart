@@ -1,5 +1,16 @@
-import 'package:e_commerance/widgets/custom_text_field.dart';
+// lib/screens/login.dart
+import 'dart:developer';
+
+import 'package:e_commerce/servies/auth_servies.dart';
+import 'package:e_commerce/servies/email_servies.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'signup.dart';
+import 'main_screen.dart';
+//import '../services/email_service.dart';
+//import '../services/auth_service.dart';
+import '../widgets/custom_text_field.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -9,287 +20,163 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  //From Controllers and State
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final GlobalKey<FormState> _fromKet = GlobalKey<FormState>();
-  bool_isLoggingIn = false;
+  final emailController    = TextEditingController();
+  final passwordController = TextEditingController();
+  final _formKey           = GlobalKey<FormState>();
+  bool isLoading           = false;
 
   @override
-  void dispose(){
-    _emailController.dispose();
-    _passwordController.dispose();
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
-  //Handle user login 
-  Future<void> _loginUser() async{
-    // Check if form is valid first
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-// Show loading state
-setState(() {
-  _isLoggingIn = true;
-});
 
-try {
-  //Attempt to sign in with firebase 
-  final userCredential = await FirebaseAuth.instance.signInwithEmailAndPassword(
-    email:_emailController.text.trim(),
-    password: _passwordController.text.trim(),
-  );
-  // Get user's name for welcome email
-  final userName = await AuthService.getCurrentUserNmae();
+  Future<void> loginHandle() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  // Send welcome email (don't wait for it to complete)
+    setState(() => isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email:    emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Get user name then send welcome email (fire and forget)
+      final name = await AuthService.getCurrentUserName();
       EmailService.sendWelcomeEmail(
-        toEmail: _emailController.text.trim(),
-        toName: userName,
+        toEmail: emailController.text.trim(),
+        toName:  name,
       );
-       // Show success message if screen is still mounted
+
       if (!mounted) return;
-      
-      _showSnackBar(
-        'Welcome back! Login successful ✨',
-        Colors.green,
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful! Welcome email sent 📧'),
+          backgroundColor: Colors.green,
+        ),
       );
-      // Navigate to min screen
+
       Navigator.pushReplacement(
         context,
-       MaterialPageRoute(builder: (_) => const MainScreen()),
-       );
-} on FirebaseAuthException catch (error){
-  // Handle any other unexpected errors
-  _showSnackBar('Something went wrong. Please try again.', Colors.red);
-} finally {
-  //  // Hide loading state if screen is still mounted
-      if (mounted) {
-        setState(() {
-          _isLoggingIn = false;
-        });
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Login failed';
+      if (e.code == 'user-not-found')  msg = 'No account found with this email';
+      if (e.code == 'wrong-password')  msg = 'Wrong password';
+      if (e.code == 'invalid-email')   msg = 'Invalid email address';
+      if (e.code == 'user-disabled')   msg = 'This account has been disabled';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-  }
-}
-// Get user-friendly error message from Firebase error
-  String _getFirebaseErrorMessage(FirebaseAuthException error) {
-    switch (error.code) {
-      case 'user-not-found':
-        return 'No account found with this email address';
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'invalid-email':
-        return 'Please enter a valid email address';
-      case 'user-disabled':
-        return 'This account has been disabled. Contact support.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      default:
-        return 'Login failed. Please check your credentials.';
-    }
-  }
-   // Helper method to show snackbar messages
-  void _showSnackBar(String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
-  // Navigate to signup screen
-  void _goToSignup() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const Signup()),
-    );
-  }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(
-      title: const Text('login'),
-      backgroundColor: Colors.red,
-      foregroundColor: Color.white,
-      automaticallyImplyLeading: false,
-      elevation:0,
-    ),
-    body: SingleChildScrollView(
-      padding:const EdgeInsets.symmetric(horizontal: 24,vertical:20),
-      child:Form(key: _fromKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height:30),
-
-            // App Logo and Title Section
-              _buildHeaderSection(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Login'),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              const Icon(Icons.shopping_bag, size: 90, color: Colors.red),
+              const SizedBox(height: 10),
+              const Text(
+                'ShopNepal',
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Login to your account',
+                style: TextStyle(color: Colors.grey, fontSize: 15),
+              ),
               const SizedBox(height: 40),
 
-               // Email Input Field
               CustomTextField(
-                hintText: 'Email address',
-                icon: Icons.email_outlined,
-                controller: _emailController,
+                hintText: 'Email',
+                icon: Icons.email,
+                controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                validator: _validateEmail,,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Email is required';
+                  return null;
+                },
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Password Input Field
+              const SizedBox(height: 15),
+
               CustomTextField(
                 hintText: 'Password',
-                icon: Icons.lock_outline,
-                controller: _passwordController,
+                icon: Icons.lock,
+                controller: passwordController,
                 obscureText: true,
-                validator: _validatePassword,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Password required';
+                  return null;
+                },
               ),
-               const SizedBox(height: 32),
-              
-              // Login Button
-              _buildLoginButton(),
-              
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : loginHandle,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Login', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+
               const SizedBox(height: 20),
-              
-              // Sign Up Link
-              _buildSignupLink(),
-              
-              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Signup()),
+                    ),
+                    child: const Text(
+                      'Sign Up',
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
-  }
-// Build header section with app logo and title
-  Widget _buildHeaderSection() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.shopping_bag,
-            size: 60,
-            color: Colors.red,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'ShopNepal',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Sign in to continue shopping',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  } 
-   // Build login button with loading state
-  Widget _buildLoginButton() {
-    return ElevatedButton(
-      onPressed: _isLoggingIn ? null : _loginUser,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 2,
-      ),
-      child: _isLoggingIn
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-             : const Text(
-              'Login',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-    );
-  }
-
-  // Build signup navigation link
-  Widget _buildSignupLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          "Don't have an account? ",
-          style: TextStyle(fontSize: 14),
-        ),
-        GestureDetector(
-          onTap: _goToSignup,
-          child: const Text(
-            'Create Account',
-             style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Email validation
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter your email address';
-    }
-      // Basic email format validation
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Please enter a valid email address';
-    }
-    
-    return null;
-  }
-
-  // Password validation
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    
-    return null;
-  }
-}  
-
-
-
-        
-      ),))
-    )
-
-    ));
   }
 }

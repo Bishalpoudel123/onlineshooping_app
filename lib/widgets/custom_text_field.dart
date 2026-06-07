@@ -1,21 +1,22 @@
+// lib/widgets/custom_text_field.dart
 import 'package:flutter/material.dart';
 
 class CustomTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final TextEditingController controller;
-  final String? Function(String?)? validator;
   final bool obscureText;
   final TextInputType keyboardType;
+  final String? Function(String?)? validator;
 
   const CustomTextField({
     super.key,
     required this.hintText,
     required this.icon,
     required this.controller,
-    this.validator,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
+    this.validator,
   });
 
   @override
@@ -35,11 +36,6 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
     );
   }

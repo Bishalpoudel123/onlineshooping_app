@@ -1,4 +1,9 @@
+// lib/screens/homepage_screen.dart
+import 'package:e_commerce/widgets/producd_card.dart';
 import 'package:flutter/material.dart';
+import '../models/product.dart';
+//import '../widgets/product_card.dart';
+import 'cart_screen.dart';
 
 class HomepageScreen extends StatefulWidget {
   const HomepageScreen({super.key});
@@ -8,38 +13,33 @@ class HomepageScreen extends StatefulWidget {
 }
 
 class _HomepageScreenState extends State<HomepageScreen> {
-  // This is where we keep track of what the user has added to their shopping cart
-  final List<ProductCart> shoppingCart = [];
+  // Shared cart list — passed to CartScreen
+  final List<ProductCart> cartItems = [];
 
   @override
   Widget build(BuildContext context) {
-     // Get the list of available products from our product model
-    final availableProducts = ProductCart.products;
+    final products = ProductCart.products;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('our products'),
+        title: const Text('Products'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
         actions: [
-          // Shopping cart button with item count badge
           IconButton(
             onPressed: () {
-              // Navigate to cart screen when button is tapped
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CartScreen(cartItems: shoppingCart),
+                  builder: (_) => CartScreen(cartItems: cartItems),
                 ),
               );
             },
-             icon: Stack(
+            icon: Stack(
               clipBehavior: Clip.none,
               children: [
                 const Icon(Icons.shopping_cart, size: 28),
-                
-                // Show a badge with item count only if cart is not empty
-                if (shoppingCart.isNotEmpty)
+                if (cartItems.isNotEmpty)
                   Positioned(
                     right: -4,
                     top: -4,
@@ -47,7 +47,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                       radius: 9,
                       backgroundColor: Colors.white,
                       child: Text(
-                        '${shoppingCart.length}', // Show total number of items
+                        '${cartItems.length}',
                         style: const TextStyle(
                             color: Colors.red,
                             fontSize: 11,
@@ -60,27 +60,21 @@ class _HomepageScreenState extends State<HomepageScreen> {
           ),
         ],
       ),
-       body: ListView.builder(
+      body: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: availableProducts.length,
+        itemCount: products.length,
         itemBuilder: (context, index) {
-          final currentProduct = availableProducts[index];
-          
+          final product = products[index];
           return ProductCard(
-            product: currentProduct,
+            product: product,
             onAdd: () {
-              // When "Add to Cart" is pressed, update the cart
-              setState(() {
-                shoppingCart.add(currentProduct);
-              });
-              
-              // Show a friendly confirmation message
+              setState(() => cartItems.add(product));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('✨ ${currentProduct.name} added to your cart! ✨'),
+                  content: Text('${product.name} added to cart 🛒'),
                   duration: const Duration(seconds: 1),
                   backgroundColor: Colors.green,
-                   ),
+                ),
               );
             },
           );
