@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ======== USER COLLECTION ========
+    match /users/{uid} {
+      // Allow users to read and write their own profile
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+      
+      // Allow creating a new user profile during signup
+      allow create: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ======== PRODUCTS COLLECTION ========
+    match /products/{document=**} {
+      // Allow anyone to read products
+      allow read: if true;
+      
+      // Allow authenticated users to write (for admins)
+      allow write: if request.auth != null;
+    }
+
+    // ======== CART COLLECTION ========
+    match /carts/{uid}/{document=**} {
+      // Allow users to read and write their own cart
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ======== ORDERS COLLECTION ========
+    match /orders/{uid}/{document=**} {
+      // Allow users to read and write their own orders
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ======== FAVORITES COLLECTION ========
+    match /favorites/{uid}/{document=**} {
+      // Allow users to read and write their own favorites
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ======== DEFAULT - DENY ALL ========
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

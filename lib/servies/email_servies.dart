@@ -49,6 +49,7 @@ class EmailService {
     required String content,
   }) async {
     try {
+      print('[EmailService] Sending email to $toEmail...');
       final response = await http.post(
         Uri.parse('https://api.emailjs.com/api/v1.0/email/send'),
         headers: {
@@ -60,18 +61,28 @@ class EmailService {
           'template_id': _templateId,
           'user_id':     _publicKey,
           'template_params': {
-            'to_email':  toEmail,   // {{to_email}}
-            'from_name': toName,    // {{from_name}}
-            'reply_to':  toEmail,   // {{reply_to}}
-            'subject':   subject,   // {{subject}}
-            'content':   content,   // {{content}}
+            'to_email':  toEmail,
+            'from_name': toName,
+            'reply_to':  toEmail,
+            'subject':   subject,
+            'content':   content,
           },
         }),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Email service timeout'),
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        print('[EmailService] Email sent successfully');
+        return true;
+      } else {
+        print('[EmailService] Failed with status code: ${response.statusCode}');
+        print('[EmailService] Response: ${response.body}');
+        return false;
+      }
     } catch (e) {
-      print('EmailService error: $e');
+      print('[EmailService] Error: $e');
       return false;
     }
   }

@@ -1,10 +1,10 @@
 // lib/screens/signup.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'login.dart';
 import '../widgets/custom_text_field.dart';
+import '../servies/auth_servies.dart';
 
 class Signup extends StatefulWidget {
   const Signup({super.key});
@@ -36,49 +36,55 @@ class _SignupState extends State<Signup> {
     setState(() => isLoading = true);
 
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      final credential = await AuthService.signUp(
+        name:     nameController.text.trim(),
         email:    emailController.text.trim(),
         password: passwordController.text.trim(),
+        phone:    phoneController.text.trim(),
       );
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set({
-        'uid':       credential.user!.uid,
-        'name':      nameController.text.trim(),
-        'email':     emailController.text.trim(),
-        'phone':     phoneController.text.trim(),
-        'createdAt': DateTime.now(),
-      });
-
-      if (!mounted) return;
+      if (credential == null || !mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Account created! Please log in.'),
+          content: Text('✓ Account created successfully! Please log in.'),
           backgroundColor: Colors.green,
         ),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const Login()),
-      );
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Login()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       String msg = 'Signup failed';
-      if (e.code == 'email-already-in-use') msg = 'Email already exists';
-      if (e.code == 'weak-password')        msg = 'Password is too weak';
-      if (e.code == 'invalid-email')        msg = 'Invalid email address';
+      if (e.code == 'email-already-in-use') msg = 'This email is already registered';
+      if (e.code == 'weak-password')        msg = 'Password must be at least 6 characters';
+      if (e.code == 'invalid-email')        msg = 'Please enter a valid email address';
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      print('Signup error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

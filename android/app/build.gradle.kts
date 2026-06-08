@@ -9,7 +9,7 @@ android {
 
     namespace = "com.example.e_commerance"
 
-    compileSdk = 34
+    compileSdk = 35
 
     // IMPORTANT FIX
     ndkVersion = "27.0.12077973"

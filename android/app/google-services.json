@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1070241480611",
-    "project_id": "newsapp-532ea",
-    "storage_bucket": "newsapp-532ea.firebasestorage.app"
+    "project_number": "543795437191",
+    "project_id": "ecommerance-54dc8",
+    "storage_bucket": "ecommerance-54dc8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1070241480611:android:7a8a40394260d851c9a416",
+        "mobilesdk_app_id": "1:543795437191:android:65047d50a7d397e0a1e222",
         "android_client_info": {
           "package_name": "com.example.e_commerance"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAcX44_Sv-3CRDIGmaJLLerCiisJcRvTIc"
+          "current_key": "AIzaSyAPr4RoAwvOSN_aLMcn6RhfjuRv5bBUYgk"
         }
       ],
       "services": {
